@@ -67,7 +67,7 @@ select option { background:var(--surface); }
 
 /* RECORDS */
 #records-container { padding:0 14px 80px; }
-.record-row { display:grid; grid-template-columns:30px 2fr 80px 1.1fr 52px 52px 0.9fr 0.4fr 0.4fr 0.5fr 44px 34px 34px 60px 90px; border-bottom:1px solid var(--border); align-items:center; transition:background 0.1s; }
+.record-row { display:grid; grid-template-columns:30px 1.3fr 60px 0.9fr 90px 52px 1fr 0.35fr 0.35fr 0.4fr 44px 34px 34px 60px 90px; border-bottom:1px solid var(--border); align-items:center; transition:background 0.1s; }
 .record-row:hover { background:rgba(255,255,255,0.022); }
 .record-row.selected { background:var(--accent-glow); }
 .record-row.is-sold { opacity:0.45; }
@@ -1302,7 +1302,7 @@ function makeGridCard(r) {
 
 function getFormClass(f) { return {LP:'LP','2LP':'2LP',CD:'CD','2CD':'2CD',MC:'MC'}[f]||'other'; }
 function getCondClass(c) { return {Mint:'Mint',NM:'NM','VG+':'VGplus',VG:'VG','G+':'G',G:'G',F:'F'}[c]||'other'; }
-function renderStars(s) { return s ? `<span style="color:var(--accent)">${s}</span>` : '<span style="color:var(--text-muted)">—</span>'; }
+function renderStars(s) { if (!s) return '<span style="color:var(--text-muted)">—</span>'; const n = ratingToNum(s); return n ? `<span style="color:var(--accent)">${'★'.repeat(n)}</span>` : '<span style="color:var(--text-muted)">—</span>'; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 // ── PAGINATION ────────────────────────────────────────────────────────────
@@ -1519,10 +1519,16 @@ function addToQueueFromDetail() {
 // ── TOGGLE TRACK FAV IN DETAIL PANEL ─────────────────────────────────────────
 async function toggleDetailFav(id, trackIdx) {
   const r = allRecords.find(x => String(x.id) === String(id));
-  if (!r?.tracklist) return;
+  if (!r) { console.error('Record not found:', id); return; }
+  if (!r.tracklist?.length) { console.error('No tracklist on record:', id); return; }
   r.tracklist[trackIdx].fav = !r.tracklist[trackIdx].fav;
-  await apiPatch(id, { tracklist: r.tracklist });
-  renderDetail(r);
+  try {
+    await apiPatch(id, { tracklist: JSON.parse(JSON.stringify(r.tracklist)) });
+    renderDetail(r);
+  } catch(e) {
+    showToast('Could not save favourite: ' + e.message, 'error');
+    r.tracklist[trackIdx].fav = !r.tracklist[trackIdx].fav; // revert
+  }
 }
 
 // ── COVER ART FETCH ───────────────────────────────────────────────────────────
