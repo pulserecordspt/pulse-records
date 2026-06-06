@@ -67,7 +67,7 @@ select option { background:var(--surface); }
 
 /* RECORDS */
 #records-container { padding:0 14px 80px; }
-.record-row { display:grid; grid-template-columns:30px 2fr 52px 0.9fr 52px 52px 0.7fr 0.6fr 0.6fr 0.5fr 44px 34px 34px 60px 90px; border-bottom:1px solid var(--border); align-items:center; transition:background 0.1s; }
+.record-row { display:grid; grid-template-columns:30px 2fr 80px 1.1fr 52px 52px 0.9fr 0.4fr 0.4fr 0.5fr 44px 34px 34px 60px 90px; border-bottom:1px solid var(--border); align-items:center; transition:background 0.1s; }
 .record-row:hover { background:rgba(255,255,255,0.022); }
 .record-row.selected { background:var(--accent-glow); }
 .record-row.is-sold { opacity:0.45; }
@@ -1271,7 +1271,7 @@ function makeGridCard(r) {
         <button onclick="copyRecordTitle('${r.id}');event.stopPropagation()" title="Copy title" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:0 2px;flex-shrink:0">⎘</button>
       </div>
       <div class="grid-title">${esc(r.title||'—')}</div>
-      ${r.rating ? `<div style="color:var(--accent);font-size:0.72rem;margin-top:2px">${'★'.repeat(ratingToNum(r.rating))}${'☆'.repeat(5-ratingToNum(r.rating))}</div>` : ''}
+      ${r.rating ? `<div style="color:var(--accent);font-size:0.72rem;margin-top:2px">${'★'.repeat(ratingToNum(r.rating))}</div>` : ''}
       <div class="grid-year">${r.year||'—'} · ${esc(r.ctr||'')}</div>
       <div class="grid-genre">${esc(r.genre||'—')}</div>
     </div>
@@ -1405,6 +1405,9 @@ function renderDetail(r) {
   const body = document.getElementById('detail-body');
   const rating = r.rating ? ratingToNum(r.rating) : 0;
   const tracklist = Array.isArray(r.tracklist) ? r.tracklist : [];
+  // Sync with allRecords to get latest fav state
+  const liveR = allRecords.find(x => String(x.id) === String(r.id));
+  if (liveR) { r.tracklist = liveR.tracklist; }
   const lineup    = Array.isArray(r.lineup)    ? r.lineup    : [];
   const metaParts = [r.form, r.year, r.cond, r.label, r.ctr].filter(Boolean);
   const embedUrl  = r.bandcamp_id ? getBcEmbedUrl(r.bandcamp_id) : null;
@@ -1422,7 +1425,7 @@ function renderDetail(r) {
   html += `<div class="detail-main">
     <div class="detail-artist">${esc(r.artist||'—')}</div>
     <div class="detail-title">${esc(r.title||'—')}</div>
-    ${rating ? `<div class="detail-rating">${'★'.repeat(rating)}${'☆'.repeat(5-rating)}</div>` : ''}
+    ${rating ? `<div class="detail-rating">${'★'.repeat(rating)}</div>` : ''}
     <div class="detail-meta">
       ${metaParts.map(p => `<span class="detail-meta-tag">${esc(p)}</span>`).join('')}
     </div>
