@@ -521,6 +521,15 @@ select option { background:var(--surface); }
   .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
   .close:hover { color: black; }
 </style>
+
+<style>
+  .low-stock {{ background-color: #fff3cd; }}
+  .sold-out {{ background-color: #f8d7da; color: #721c24; }}
+  .modal {{ display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }}
+  .modal-content {{ background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; }}
+  .close {{ color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }}
+  .close:hover {{ color: black; }}
+</style>
 </head>
 <body>
 
@@ -1316,7 +1325,8 @@ function makeGridCard(r) {
       <div class="grid-actions">
         <button class="icon-btn plays-btn" onclick="addPlay('${r.id}')" title="Log a listen" style="font-size:0.72rem;padding:2px 5px;${r.listen_count>0?'color:var(--accent);border-color:var(--accent-dim)':'color:var(--text-muted)'}">♪ ${r.listen_count||0}</button>
         <button class="icon-btn" onclick="copyRecord('${r.id}')" title="Copy to clipboard">⎘</button>
-        ${r.discogs_url?`<a href="${r.discogs_url}" target="_blank" class="icon-btn link">D</a>`:''}
+        ${r.discogs_url?`<a href="${r.discogs_url}" target="_blank" class="icon-btn link">D</a>`:''} 
+    <button class="icon-btn" onclick="openSaleModal(${r.id})" title="Register Sale">💰</button>
         ${isSold
           ? `<button class="icon-btn unsold-btn" onclick="toggleSold('${r.id}',false)" title="Mark available">↺</button>`
           : `<button class="icon-btn sold-btn"   onclick="toggleSold('${r.id}',true)"  title="Mark sold">✓</button>`}
@@ -3257,6 +3267,90 @@ init();
       }
     }
     return out;
+  }
+</script>
+
+<div id="sale-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeSaleModal()">&times;</span>
+    <h2>Register Sale</h2>
+    <label class="form-label">Customer</label>
+    <input class="form-input" id="sale-customer" placeholder="Customer name or contact">
+    <label class="form-label">Method</label>
+    <select class="form-input" id="sale-method">
+      <option value="email">Email</option>
+      <option value="whatsapp">WhatsApp</option>
+      <option value="vinted">Vinted</option>
+      <option value="other">Other</option>
+    </select>
+    <label class="form-label">Notes</label>
+    <textarea class="form-input" id="sale-notes" placeholder="Additional notes"></textarea>
+    <button class="btn" onclick="registerSale()">Register Sale</button>
+  </div>
+</div>
+
+<script>
+  let selectedRecordId = null;
+
+  // Open sale modal
+  function openSaleModal(id) {
+    selectedRecordId = id;
+    document.getElementById('sale-modal').style.display = 'block';
+  }
+
+  // Close sale modal
+  function closeSaleModal() {
+    document.getElementById('sale-modal').style.display = 'none';
+  }
+
+  // Register sale
+  async function registerSale() {
+    const customer = document.getElementById('sale-customer').value;
+    const method = document.getElementById('sale-method').value;
+    const notes = document.getElementById('sale-notes').value;
+    
+    if (!customer) {
+      showToast('Please enter a customer name or contact.', 'error');
+      return;
+    }
+
+    try {
+      // Insert into sales table
+      const saleResponse = await fetch(`${SUPABASE_URL}/rest/v1/sales`, {
+        method: 'POST',
+        headers: HEADERS,
+        body: JSON.stringify({
+          record_id: selectedRecordId,
+          customer: customer,
+          method: method,
+          notes: notes
+        })
+      });
+
+      if (!saleResponse.ok) throw new Error('Failed to register sale');
+
+      // Update record quantity
+      const record = allRecords.find(r => r.id === selectedRecordId);
+      if (record) {
+        const newQuantity = (record.quantity || 1) - 1;
+        await apiPatch(selectedRecordId, {
+          quantity: newQuantity
+        });
+        showToast('Sale registered successfully!', 'success');
+        closeSaleModal();
+        await init(); // Refresh data
+      }
+    } catch (error) {
+      showToast('Error registering sale: ' + error.message, 'error');
+    }
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('sale-modal');
+    if (event.target === modal) {
+      closeSaleModal();
+    }
   }
 </script>
 </body>
