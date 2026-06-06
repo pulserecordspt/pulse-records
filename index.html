@@ -1522,8 +1522,15 @@ async function fetchMetalArchives(id) {
       await apiPatch(id, payload);
       showToast('✓ Fetched: ' + (tracks.length ? tracks.length + ' tracks' : '') + (members.length ? ', ' + members.length + ' members' : ''), 'success');
       renderDetail(r);
+    } else if (!tracks.length && !members.length) {
+      showToast('Nothing found — check the Metal Archives URL is for the album, not the band', 'warn');
     } else {
-      showToast('Nothing new found on Metal Archives', 'warn');
+      // Force overwrite existing data
+      if (tracks.length)  { payload.tracklist = tracks; r.tracklist = tracks; }
+      if (members.length) { payload.lineup    = members; r.lineup    = members; }
+      await apiPatch(id, payload);
+      showToast('✓ Updated: ' + tracks.length + ' tracks, ' + members.length + ' members', 'success');
+      renderDetail(r);
     }
   } catch(e) {
     showToast('Metal Archives fetch failed: ' + e.message, 'error');
@@ -1584,12 +1591,18 @@ async function fetchMusicBrainz(id) {
     if (tracks.length)  { payload.tracklist = tracks; r.tracklist = tracks; }
     if (coverUrl && !r.cover_url) { payload.cover_url = coverUrl; r.cover_url = coverUrl; }
 
+    // Always overwrite tracklist if we got results
+    if (tracks.length) { payload.tracklist = tracks; r.tracklist = tracks; }
+    if (coverUrl && !r.cover_url) { payload.cover_url = coverUrl; r.cover_url = coverUrl; }
+
     if (Object.keys(payload).length) {
       await apiPatch(id, payload);
       showToast('✓ MusicBrainz: ' + (tracks.length ? tracks.length + ' tracks' : '') + (coverUrl && !r.cover_url ? ', cover art' : ''), 'success');
       renderDetail(r);
+    } else if (!tracks.length) {
+      showToast('Nothing found on MusicBrainz — try a different search', 'warn');
     } else {
-      showToast('Nothing new found on MusicBrainz', 'warn');
+      showToast('Already up to date', 'success');
     }
   } catch(e) {
     showToast('MusicBrainz fetch failed: ' + e.message, 'error');
