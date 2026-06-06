@@ -477,6 +477,8 @@ select option { background:var(--surface); }
   letter-spacing:0.06em; font-weight:700;
 }
 .record-row.is-complete .complete-badge { display:inline-flex; }
+.record-row.is-complete { background: rgba(61,171,106,0.06); border-left: 3px solid #3dab6a !important; }
+.record-row.is-complete:hover { background: rgba(61,171,106,0.1); }
 
 /* EXPANDABLE DESCRIPTION */
 .record-row { cursor:pointer; }
@@ -874,6 +876,7 @@ select option { background:var(--surface); }
   <div id="detail-header">
     <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em">RECORD DETAILS</span>
     <button id="detail-edit-btn" class="btn" onclick="openEditFromDetail()" style="font-size:0.75rem;padding:4px 10px">✎ EDIT</button>
+    <button class="btn" onclick="addToQueueFromDetail()" style="font-size:0.75rem;padding:4px 10px;border-color:var(--accent);color:var(--accent)">♪ QUEUE</button>
     <button id="detail-copy-btn" class="btn" onclick="copyDetailTitle()" style="font-size:0.75rem;padding:4px 10px">⎘ COPY</button>
     <button id="detail-close" onclick="closeDetail()">✕</button>
   </div>
@@ -1172,7 +1175,8 @@ function renderPage() {
 function makeTableRow(r) {
   const row = document.createElement('div');
   const isSold = r.sold;
-  row.className = 'record-row' + (selectedIds.has(r.id)?' selected':'') + (isSold?' is-sold':'') + (r.edited?' is-edited':'') + (r.newsletter?' is-newsletter':'');
+  const rowComplete = isComplete(r);
+  row.className = 'record-row' + (selectedIds.has(r.id)?' selected':'') + (isSold?' is-sold':'') + (r.edited?' is-edited':'') + (r.newsletter?' is-newsletter':'') + (rowComplete?' is-complete':'');
   row.dataset.id = r.id;
   const fC = getFormClass(r.form), cC = getCondClass(r.cond);
   const dp = r.discogs_price ? parsePrice(r.discogs_price).toFixed(2)+'€' : '—';
@@ -1211,6 +1215,7 @@ function makeTableRow(r) {
       </button>
     </div>
     <div class="cell actions-cell">
+      <button class="icon-btn" onclick="addToQueue('${r.id}');event.stopPropagation()" title="Add to queue" style="color:var(--accent)">♪</button>
       <button class="icon-btn edit" onclick="openEditModal('${r.id}')" title="Edit">✎</button>
       <button class="icon-btn del"  onclick="deleteRecord('${r.id}','${esc(r.artist)} — ${esc(r.title)}')" title="Delete" style="color:var(--red);opacity:0.7">✕</button>
       <div class="act-menu-wrap">
@@ -1409,7 +1414,7 @@ function renderDetail(r) {
 
   // ── Cover art ──────────────────────────────────────────────────────────────
   if (r.cover_url) {
-    html += `<img class="detail-cover" src="${r.cover_url}" alt="${esc(r.artist)}" onerror="this.outerHTML='<div class=\"detail-cover-placeholder\">♪</div>'">`;
+    html += `<img class="detail-cover" src="${r.cover_url}" alt="${esc(r.artist)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\"detail-cover-placeholder\">♪</div>')">`;
   } else {
     html += `<div class="detail-cover-placeholder">♪</div>`;
   }
@@ -1452,7 +1457,7 @@ function renderDetail(r) {
           <span class="detail-track-num">${i+1}</span>
           <span class="detail-track-title">${esc(t.title||'—')}</span>
           ${t.duration ? `<span class="detail-track-dur">${esc(t.duration)}</span>` : ''}
-          ${t.fav ? `<span class="detail-track-fav">❤</span>` : ''}
+          <button onclick="toggleDetailFav('${r.id}',${i})" style="background:none;border:none;cursor:pointer;font-size:0.85rem;padding:2px 4px;opacity:${t.fav?'1':'0.25'};transition:opacity 0.15s" title="${t.fav?'Unfavourite':'Favourite'}">❤</button>
         </div>`).join('')}
     </div>`;
   }
@@ -1500,6 +1505,23 @@ function renderDetail(r) {
 }
 
 
+
+
+// ── QUEUE FROM DETAIL PANEL ──────────────────────────────────────────────────
+function addToQueueFromDetail() {
+  if (!detailRecordId) return;
+  addToQueue(detailRecordId);
+  showToast('♪ Added to queue', 'success');
+}
+
+// ── TOGGLE TRACK FAV IN DETAIL PANEL ─────────────────────────────────────────
+async function toggleDetailFav(id, trackIdx) {
+  const r = allRecords.find(x => String(x.id) === String(id));
+  if (!r?.tracklist) return;
+  r.tracklist[trackIdx].fav = !r.tracklist[trackIdx].fav;
+  await apiPatch(id, { tracklist: r.tracklist });
+  renderDetail(r);
+}
 
 // ── COVER ART FETCH ───────────────────────────────────────────────────────────
 async function fetchCoverArt(id) {
