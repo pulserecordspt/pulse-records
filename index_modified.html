@@ -513,8 +513,7 @@ select option { background:var(--surface); }
 </style>
 
 <style>
-  .low-stock { background-color: #fff3cd; }
-  .sold-out { background-color: #f8d7da; color: #721c24; }
+  
   .low-stock { background-color: #fff3cd; }
   .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
   .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; }
@@ -3173,24 +3172,41 @@ async function runEditedMigration() {
 init();
 </script>
 
+
 <div id="sale-modal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeSaleModal()">&times;</span>
     <h2>Register Sale</h2>
-    <label class="form-label">Customer</label>
-    <input class="form-input" id="sale-customer" placeholder="Customer name or contact">
-    <label class="form-label">Method</label>
+    <label class="form-label">Customer Name</label>
+    <input class="form-input" id="sale-customer-name" placeholder="Customer full name">
+    <label class="form-label">Customer Email</label>
+    <input class="form-input" id="sale-customer-email" type="email" placeholder="customer@example.com">
+    <label class="form-label">Locality</label>
+    <input class="form-input" id="sale-locality" placeholder="City, Country">
+    <label class="form-label">Sale Method</label>
     <select class="form-input" id="sale-method">
       <option value="email">Email</option>
       <option value="whatsapp">WhatsApp</option>
       <option value="vinted">Vinted</option>
       <option value="other">Other</option>
     </select>
+    <label class="form-label">Payment Method</label>
+    <select class="form-input" id="sale-payment-method">
+      <option value="mbway">MB Way</option>
+      <option value="paypal">PayPal</option>
+      <option value="transfer">Bank Transfer</option>
+      <option value="cash">Cash</option>
+    </select>
+    <label class="form-label">Dispatch Date</label>
+    <input class="form-input" id="sale-dispatch-date" type="date">
     <label class="form-label">Notes</label>
-    <textarea class="form-input" id="sale-notes" placeholder="Additional notes (e.g., shipped via CTT)"></textarea>
+    <textarea class="form-input" id="sale-notes" placeholder="Additional notes"></textarea>
     <button class="btn" onclick="registerSale()">Register Sale</button>
   </div>
 </div>
+
+</div>
+
 
 <script>
   let selectedRecordId = null;
@@ -3208,12 +3224,16 @@ init();
 
   // Register sale
   async function registerSale() {
-    const customer = document.getElementById('sale-customer').value;
+    const customerName = document.getElementById('sale-customer-name').value;
+    const customerEmail = document.getElementById('sale-customer-email').value;
+    const locality = document.getElementById('sale-locality').value;
     const method = document.getElementById('sale-method').value;
+    const paymentMethod = document.getElementById('sale-payment-method').value;
+    const dispatchDate = document.getElementById('sale-dispatch-date').value;
     const notes = document.getElementById('sale-notes').value;
     
-    if (!customer) {
-      showToast('Please enter a customer name or contact.', 'error');
+    if (!customerName || !customerEmail) {
+      showToast('Please enter customer name and email.', 'error');
       return;
     }
 
@@ -3224,21 +3244,25 @@ init();
         headers: HEADERS,
         body: JSON.stringify({
           record_id: selectedRecordId,
-          customer: customer,
+          customer: customerName,
+          email: customerEmail,
+          locality: locality,
           method: method,
-          notes: notes
+          payment_method: paymentMethod,
+          dispatch_date: dispatchDate,
+          notes: notes,
+          sale_date: new Date().toISOString().split('T')[0]
         })
       });
 
       if (!saleResponse.ok) throw new Error('Failed to register sale');
 
-      // Update record status and quantity
+      // Update record quantity
       const record = allRecords.find(r => r.id === selectedRecordId);
       if (record) {
         const newQuantity = (record.quantity || 1) - 1;
         await apiPatch(selectedRecordId, {
-          quantity: newQuantity,
-          
+          quantity: newQuantity
         });
         showToast('Sale registered successfully!', 'success');
         closeSaleModal();
@@ -3256,19 +3280,8 @@ init();
       closeSaleModal();
     }
   }
-
-  // Update toDB function to include quantity and status
-  function toDB(payload) {
-    const skip = new Set(['id', 'created_at']);
-    const out = {};
-    for (const k in payload) {
-      if (!skip.has(k)) {
-        out[k] = payload[k];
-      }
-    }
-    return out;
-  }
 </script>
+
 
 <div id="sale-modal" class="modal">
   <div class="modal-content">
