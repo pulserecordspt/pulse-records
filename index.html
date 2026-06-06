@@ -1155,7 +1155,7 @@ function makeTableRow(r) {
 
   row.innerHTML = `
     <div class="cell cell-num"><input type="checkbox" class="row-check" ${selectedIds.has(r.id)?'checked':''} onchange="toggleSelect('${r.id}',this)"></div>
-    <div class="cell" style="display:flex;flex-direction:column;gap:1px;overflow:hidden" onclick="toggleDesc('${r.id}',event)">
+    <div class="cell" style="display:flex;flex-direction:column;gap:1px;overflow:hidden;cursor:pointer" onclick="openDetail('${r.id}')">
       <div style="display:flex;align-items:center;gap:5px">
         ${r.desc ? '<span class="desc-row-toggle" id="tog-${r.id}">▶</span>' : '<span style=\"width:10px;display:inline-block\"></span>'}
         ${r.edited?'<span class="edited-dot" title="Edited"></span>':''}
@@ -1259,6 +1259,12 @@ function makeGridCard(r) {
         <button class="icon-btn del"  onclick="deleteRecord('${r.id}','${esc(r.artist)}')">✕</button>
       </div>
     </div>`;
+  // Open detail panel on card click (not on buttons)
+  card.addEventListener('click', e => {
+    if (!e.target.closest('button') && !e.target.closest('.bc-btn') && !e.target.closest('.bc-player-wrap')) {
+      openDetail(r.id);
+    }
+  });
   return card;
 }
 
@@ -1353,8 +1359,9 @@ function closeDetail() {
 }
 
 function openEditFromDetail() {
+  const id = detailRecordId;
   closeDetail();
-  if (detailRecordId) openEditModal(detailRecordId);
+  if (id) openEditModal(id);
 }
 
 function copyDetailTitle() {
