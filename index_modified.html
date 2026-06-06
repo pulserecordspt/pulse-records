@@ -922,6 +922,29 @@ select option { background:var(--surface); }
 <div id="toast"></div>
 
 <script>
+function extractDiscogsReleaseId(url) {
+  // Match patterns for different Discogs URL formats
+  const patterns = [
+    /\/shop\/item\/(\d+)/,        // Matches /shop/item/12345678
+    /\/release\/(\d+)/,           // Matches /release/12345678-Artist-Title
+    /\/sell\/item\/(\d+)/,        // Matches /sell/item/12345678
+    /\/master\/(\d+)/,            // Matches /master/12345678-Artist-Title
+    /\/item\/(\d+)/,              // Matches /item/12345678
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  // If no pattern matches, try to extract the first sequence of digits
+  const digitMatch = url.match(/\d+/);
+  return digitMatch ? digitMatch[0] : null;
+}
+
+
 const SUPABASE_URL = 'https://lpxrhhjznwrctkihtqqg.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxweHJoaGp6bndyY3RraWh0cXFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTczNDEsImV4cCI6MjA5NTgzMzM0MX0.eUthOzrI82SiliLvKKjuAFR4EkPx7k5EgRMyZbLx9fo';
 const TABLE = 'colecao';
