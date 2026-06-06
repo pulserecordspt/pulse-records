@@ -627,7 +627,8 @@ select option { background:var(--surface); }
   <div class="sort-col" onclick="sortBy('cond')"   id="scol-cond">COND <span class="sort-arrow" id="arr-cond"></span></div>
   <div class="sort-col" onclick="sortBy('label')"  id="scol-label">LABEL <span class="sort-arrow" id="arr-label"></span></div>
   <div class="sort-col" onclick="sortBy('discogs_price')" id="scol-discogs_price">DISCOGS <span class="sort-arrow" id="arr-discogs_price"></span></div>
-  <div class="sort-col" onclick="sortBy('email_price')"   id="scol-email_price">EMAIL <span class="sort-arrow" id="arr-email_price"></span></div>
+  <div class="sort-col" onclick="sortBy('quantity')" id="scol-quantity">QTY <span class="sort-arrow" id="arr-quantity"></span></div>
+    <div class="sort-col" onclick="sortBy('email_price')"   id="scol-email_price">EMAIL <span class="sort-arrow" id="arr-email_price"></span></div>
   <div class="sort-col" onclick="sortBy('rating')" id="scol-rating">★ <span class="sort-arrow" id="arr-rating"></span></div>
   <div class="sort-col" onclick="sortBy('sold')"    id="scol-sold">SOLD <span class="sort-arrow" id="arr-sold"></span></div>
   <div class="sort-col" onclick="sortBy('listen_count')" id="scol-listen_count">PLAYS <span class="sort-arrow" id="arr-listen_count"></span></div>
@@ -1241,6 +1242,7 @@ function makeTableRow(r) {
     <div class="cell"><span class="cond-badge cond-${cC}">${esc(r.cond||'—')}</span></div>
     <div class="cell" style="font-size:0.76rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.label||'—')}</div>
     <div class="cell price-cell price-discogs">${dp}</div>
+    <div class="cell quantity-cell">${r.quantity || 1}</div>
     <div class="cell price-cell price-email">${ep}</div>
     <div class="cell stars-cell">${renderStars(r.rating)}</div>
     <div class="cell" style="font-size:0.72rem">${isSold?'<span style="color:var(--red)">SOLD</span>':'<span style="color:var(--green)">AVAIL</span>'}</div>
@@ -1267,6 +1269,7 @@ function makeTableRow(r) {
           ${isSold
             ? `<button class="act-dropdown-item avail-action" onclick="toggleSold('${r.id}',false);closeActMenus()">↺ &nbsp;Mark available</button>`
             : `<button class="act-dropdown-item sold-action"  onclick="toggleSold('${r.id}',true);closeActMenus()">✓ &nbsp;Mark as sold</button>`}
+          <button class="act-dropdown-item" onclick="openSaleModal('${r.id}');closeActMenus()">💰 &nbsp;Register Sale</button>
           <div class="act-dropdown-sep"></div>
           ${r.edited
             ? `<button class="act-dropdown-item" onclick="toggleFlag('${r.id}','edited',false);closeActMenus()" style="color:var(--text-muted)">✎ &nbsp;Unmark as edited</button>`
@@ -3173,6 +3176,7 @@ init();
 </script>
 
 
+
 <div id="sale-modal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeSaleModal()">&times;</span>
@@ -3203,6 +3207,8 @@ init();
     <textarea class="form-input" id="sale-notes" placeholder="Additional notes"></textarea>
     <button class="btn" onclick="registerSale()">Register Sale</button>
   </div>
+</div>
+
 </div>
 
 </div>
@@ -3337,6 +3343,80 @@ init();
           customer: customer,
           method: method,
           notes: notes
+        })
+      });
+
+      if (!saleResponse.ok) throw new Error('Failed to register sale');
+
+      // Update record quantity
+      const record = allRecords.find(r => r.id === selectedRecordId);
+      if (record) {
+        const newQuantity = (record.quantity || 1) - 1;
+        await apiPatch(selectedRecordId, {
+          quantity: newQuantity
+        });
+        showToast('Sale registered successfully!', 'success');
+        closeSaleModal();
+        await init(); // Refresh data
+      }
+    } catch (error) {
+      showToast('Error registering sale: ' + error.message, 'error');
+    }
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('sale-modal');
+    if (event.target === modal) {
+      closeSaleModal();
+    }
+  }
+</script>
+
+<script>
+  let selectedRecordId = null;
+
+  // Open sale modal
+  function openSaleModal(id) {
+    selectedRecordId = id;
+    document.getElementById('sale-modal').style.display = 'block';
+  }
+
+  // Close sale modal
+  function closeSaleModal() {
+    document.getElementById('sale-modal').style.display = 'none';
+  }
+
+  // Register sale
+  async function registerSale() {
+    const customerName = document.getElementById('sale-customer-name').value;
+    const customerEmail = document.getElementById('sale-customer-email').value;
+    const locality = document.getElementById('sale-locality').value;
+    const method = document.getElementById('sale-method').value;
+    const paymentMethod = document.getElementById('sale-payment-method').value;
+    const dispatchDate = document.getElementById('sale-dispatch-date').value;
+    const notes = document.getElementById('sale-notes').value;
+    
+    if (!customerName || !customerEmail) {
+      showToast('Please enter customer name and email.', 'error');
+      return;
+    }
+
+    try {
+      // Insert into sales table
+      const saleResponse = await fetch(`${SUPABASE_URL}/rest/v1/sales`, {
+        method: 'POST',
+        headers: HEADERS,
+        body: JSON.stringify({
+          record_id: selectedRecordId,
+          customer: customerName,
+          email: customerEmail,
+          locality: locality,
+          method: method,
+          payment_method: paymentMethod,
+          dispatch_date: dispatchDate,
+          notes: notes,
+          sale_date: new Date().toISOString().split('T')[0]
         })
       });
 
