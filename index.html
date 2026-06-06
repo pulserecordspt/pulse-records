@@ -1459,7 +1459,7 @@ function renderDetail(r) {
           <span class="detail-track-num">${i+1}</span>
           <span class="detail-track-title">${esc(t.title||'—')}</span>
           ${t.duration ? `<span class="detail-track-dur">${esc(t.duration)}</span>` : ''}
-          <button onclick="toggleDetailFav('${r.id}',${i})" style="background:none;border:none;cursor:pointer;font-size:0.85rem;padding:2px 4px;opacity:${t.fav?'1':'0.25'};transition:opacity 0.15s" title="${t.fav?'Unfavourite':'Favourite'}">❤</button>
+          <button onclick="toggleDetailFav('${r.id}',${i})" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:2px 6px;color:${t.fav?'#d94040':'#555'};transition:color 0.15s" title="${t.fav?'Unfavourite':'Favourite'}">❤</button>
         </div>`).join('')}
     </div>`;
   }
@@ -1519,15 +1519,17 @@ function addToQueueFromDetail() {
 // ── TOGGLE TRACK FAV IN DETAIL PANEL ─────────────────────────────────────────
 async function toggleDetailFav(id, trackIdx) {
   const r = allRecords.find(x => String(x.id) === String(id));
-  if (!r) { console.error('Record not found:', id); return; }
-  if (!r.tracklist?.length) { console.error('No tracklist on record:', id); return; }
-  r.tracklist[trackIdx].fav = !r.tracklist[trackIdx].fav;
+  if (!r) { showToast('Record not found', 'error'); return; }
+  if (!Array.isArray(r.tracklist) || !r.tracklist.length) { showToast('No tracklist', 'error'); return; }
+  const newTracklist = JSON.parse(JSON.stringify(r.tracklist));
+  newTracklist[trackIdx].fav = !newTracklist[trackIdx].fav;
   try {
-    await apiPatch(id, { tracklist: JSON.parse(JSON.stringify(r.tracklist)) });
+    await apiPatch(id, { tracklist: newTracklist });
+    r.tracklist = newTracklist;
     renderDetail(r);
+    showToast(newTracklist[trackIdx].fav ? '❤ Favourited' : '♡ Removed', 'success');
   } catch(e) {
-    showToast('Could not save favourite: ' + e.message, 'error');
-    r.tracklist[trackIdx].fav = !r.tracklist[trackIdx].fav; // revert
+    showToast('Could not save: ' + e.message, 'error');
   }
 }
 
