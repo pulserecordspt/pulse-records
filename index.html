@@ -1477,15 +1477,21 @@ async function fetchMetalArchives(id) {
   if (btn) { btn.textContent = '⏳ Fetching…'; btn.classList.add('loading'); btn.disabled = true; }
 
   try {
-    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(r.metal_url));
-    if (!res.ok) throw new Error('Fetch failed: ' + res.status);
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    // Extract album ID from URL e.g. /albums/Artist/Title/12345
+    const albumIdMatch = r.metal_url.match(/\/albums\/[^/]+\/[^/]+\/(\d+)/);
+    if (!albumIdMatch) throw new Error('Could not extract album ID from URL');
+    const albumId = albumIdMatch[1];
 
-    // Extract tracklist
+    // Use Metal Archives Ajax API for tracklist
+    const trackUrl = `https://www.metal-archives.com/release/ajax-tracks/id/${albumId}`;
+    const trackRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(trackUrl));
+    if (!trackRes.ok) throw new Error('Tracklist fetch failed: ' + trackRes.status);
+    const trackHtml = await trackRes.text();
+
+    const parser = new DOMParser();
+    const trackDoc = parser.parseFromString(trackHtml, 'text/html');
     const tracks = [];
-    doc.querySelectorAll('#songListingTable tbody tr.odd, #songListingTable tbody tr.even').forEach((row, i) => {
+    trackDoc.querySelectorAll('tr.odd, tr.even').forEach(row => {
       const cells = row.querySelectorAll('td');
       if (cells.length >= 3) {
         const title    = cells[1]?.textContent?.trim() || '';
@@ -1494,46 +1500,47 @@ async function fetchMetalArchives(id) {
       }
     });
 
-    // Extract lineup
+    // Use Metal Archives Ajax API for lineup
+    const lineupUrl = `https://www.metal-archives.com/release/ajax-personnel/id/${albumId}`;
+    const lineupRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(lineupUrl));
     const members = [];
-    doc.querySelectorAll('#band_tab_members_current .lineupTable tr, #band_tab_members_complete .lineupTable tr').forEach(row => {
-      const cells = row.querySelectorAll('td');
-      if (cells.length >= 2) {
-        const name = cells[0]?.textContent?.trim() || '';
-        const role = cells[1]?.textContent?.trim() || '';
-        if (name && role) members.push({ name, role });
-      }
-    });
-
-    // Extract cover art
-    let coverUrl = r.cover_url || null;
-    const coverImg = doc.querySelector('#cover img, .album-img img');
-    if (coverImg?.src && !r.cover_url) {
-      coverUrl = coverImg.src;
+    if (lineupRes.ok) {
+      const lineupHtml = await lineupRes.text();
+      const lineupDoc = parser.parseFromString(lineupHtml, 'text/html');
+      lineupDoc.querySelectorAll('tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 2) {
+          const name = cells[0]?.textContent?.trim() || '';
+          const role = cells[1]?.textContent?.trim() || '';
+          if (name && role && name.length > 1) members.push({ name, role });
+        }
+      });
     }
 
-    // Save to DB and memory
+    // Cover art
+    let coverUrl = null;
+    if (!r.cover_url) {
+      try {
+        const coverRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(`https://www.metal-archives.com/images/albums/${albumId}.jpg`));
+        if (coverRes.ok) coverUrl = `https://www.metal-archives.com/images/albums/${albumId}.jpg`;
+      } catch(e) { /* no cover */ }
+    }
+
     const payload = {};
     if (tracks.length)  { payload.tracklist = tracks; r.tracklist = tracks; }
     if (members.length) { payload.lineup    = members; r.lineup    = members; }
-    if (coverUrl && !r.cover_url) { payload.cover_url = coverUrl; r.cover_url = coverUrl; }
+    if (coverUrl)       { payload.cover_url = coverUrl; r.cover_url = coverUrl; }
 
     if (Object.keys(payload).length) {
       await apiPatch(id, payload);
-      showToast('✓ Fetched: ' + (tracks.length ? tracks.length + ' tracks' : '') + (members.length ? ', ' + members.length + ' members' : ''), 'success');
+      const msg = '✓ ' + (tracks.length ? tracks.length + ' tracks' : '') + (members.length ? ', ' + members.length + ' members' : '') + (coverUrl ? ', cover art' : '');
+      showToast(msg, 'success');
       renderDetail(r);
-    } else if (!tracks.length && !members.length) {
-      showToast('Nothing found — check the Metal Archives URL is for the album, not the band', 'warn');
     } else {
-      // Force overwrite existing data
-      if (tracks.length)  { payload.tracklist = tracks; r.tracklist = tracks; }
-      if (members.length) { payload.lineup    = members; r.lineup    = members; }
-      await apiPatch(id, payload);
-      showToast('✓ Updated: ' + tracks.length + ' tracks, ' + members.length + ' members', 'success');
-      renderDetail(r);
+      showToast('Nothing found — Metal Archives may be blocking the request', 'warn');
     }
   } catch(e) {
-    showToast('Metal Archives fetch failed: ' + e.message, 'error');
+    showToast('Metal Archives: ' + e.message, 'error');
     console.error(e);
   } finally {
     if (btn) { btn.textContent = '⬇ Metal Archives'; btn.classList.remove('loading'); btn.disabled = false; }
