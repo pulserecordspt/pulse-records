@@ -365,6 +365,105 @@ select option { background:var(--surface); }
 .lineup-input { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:var(--font-body); font-size:0.82rem; padding:5px 8px; border-radius:3px; flex:1; outline:none; }
 .lineup-input:focus { border-color:var(--accent); }
 
+
+/* ── RECORD DETAIL PANEL ─────────────────────────────────────────────────── */
+#detail-panel {
+  position: fixed; top: 0; right: -520px; width: 500px; height: 100vh;
+  background: var(--deep); border-left: 1px solid var(--border-bright);
+  z-index: 750; transition: right 0.25s ease; display: flex; flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.7);
+}
+#detail-panel.open { right: 0; }
+#detail-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+#detail-close {
+  margin-left: auto; background: none; border: 1px solid var(--border);
+  color: var(--text-muted); padding: 3px 9px; border-radius: 2px; cursor: pointer; font-size: 1rem;
+}
+#detail-close:hover { border-color: var(--red); color: var(--red); }
+#detail-body { flex: 1; overflow-y: auto; padding: 0 0 40px; }
+
+.detail-cover {
+  width: 100%; aspect-ratio: 1; object-fit: cover; display: block;
+  background: var(--vinyl);
+}
+.detail-cover-placeholder {
+  width: 100%; aspect-ratio: 1; background: var(--raised);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; color: var(--border);
+}
+.detail-main { padding: 16px 18px 0; }
+.detail-artist {
+  font-family: var(--font-head); font-size: 1.4rem; color: var(--text);
+  letter-spacing: 0.04em; line-height: 1.2;
+}
+.detail-title {
+  font-size: 1rem; color: var(--text-dim); font-style: italic; margin-top: 4px;
+}
+.detail-meta {
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);
+  margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;
+}
+.detail-meta-tag {
+  background: var(--raised); border: 1px solid var(--border);
+  padding: 2px 7px; border-radius: 2px;
+}
+.detail-rating { color: var(--accent); font-size: 0.9rem; margin-top: 6px; }
+.detail-section {
+  padding: 14px 18px 0;
+  border-top: 1px solid var(--border); margin-top: 14px;
+}
+.detail-section-title {
+  font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 10px;
+}
+.detail-track {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.84rem;
+}
+.detail-track-num {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted);
+  width: 22px; flex-shrink: 0; text-align: right;
+}
+.detail-track-title { flex: 1; color: var(--text); }
+.detail-track-dur {
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);
+  flex-shrink: 0;
+}
+.detail-track-fav { color: var(--red); font-size: 0.8rem; flex-shrink: 0; }
+.detail-member {
+  display: flex; gap: 8px; padding: 4px 0; font-size: 0.84rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.detail-member-name { font-weight: 600; color: var(--text); min-width: 140px; }
+.detail-member-role { color: var(--text-dim); font-style: italic; }
+.detail-text {
+  font-size: 0.84rem; color: var(--text-dim); line-height: 1.7;
+  white-space: pre-wrap;
+}
+.detail-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.detail-link {
+  background: var(--raised); border: 1px solid var(--border);
+  color: var(--text-muted); padding: 4px 10px; border-radius: 2px;
+  font-family: var(--font-mono); font-size: 0.72rem; text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.detail-link:hover { border-color: var(--accent); color: var(--accent); }
+.detail-bc-wrap { margin: 0 18px; }
+.detail-actions {
+  display: flex; gap: 8px; padding: 14px 18px 0; flex-wrap: wrap;
+}
+.detail-fetch-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  padding: 5px 12px; border-radius: 2px; cursor: pointer; font-size: 0.78rem;
+  font-family: var(--font-mono); transition: all 0.15s;
+}
+.detail-fetch-btn:hover { border-color: var(--accent); color: var(--accent); }
+.detail-fetch-btn.loading { border-color: var(--accent); color: var(--accent); opacity: 0.6; }
+
 /* EXPANDABLE DESCRIPTION */
 .record-row { cursor:pointer; }
 .desc-row {
@@ -749,6 +848,18 @@ select option { background:var(--surface); }
   <div id="import-status">Reading sell stock only (first 2,757 rows)…</div>
 </div>
 
+
+
+<!-- ── RECORD DETAIL PANEL ──────────────────────────────────────────────── -->
+<div id="detail-panel">
+  <div id="detail-header">
+    <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em">RECORD DETAILS</span>
+    <button id="detail-edit-btn" class="btn" onclick="openEditFromDetail()" style="font-size:0.75rem;padding:4px 10px">✎ EDIT</button>
+    <button id="detail-copy-btn" class="btn" onclick="copyDetailTitle()" style="font-size:0.75rem;padding:4px 10px">⎘ COPY</button>
+    <button id="detail-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div id="detail-body"></div>
+</div>
 
 <!-- ── LISTENING QUEUE PANEL ──────────────────────────────────────────── -->
 <div id="queue-panel">
@@ -1220,6 +1331,265 @@ function copyRecordTitle(id) {
   const parts = [r.form, r.desc, r.year, r.label].filter(Boolean).join(', ');
   const title = `${r.artist||''}${r.ctr?' ('+r.ctr+')':''} — ${r.title||''}${parts?' ('+parts+')':''}`;
   navigator.clipboard.writeText(title).then(() => showToast('⎘ Title copied', 'success'));
+}
+
+
+// ── RECORD DETAIL PANEL ───────────────────────────────────────────────────────
+let detailRecordId = null;
+
+function openDetail(id) {
+  const r = allRecords.find(x => String(x.id) === String(id));
+  if (!r) return;
+  detailRecordId = id;
+  renderDetail(r);
+  document.getElementById('detail-panel').classList.add('open');
+  // Close queue if open
+  if (queueOpen) closeQueue();
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+  detailRecordId = null;
+}
+
+function openEditFromDetail() {
+  closeDetail();
+  if (detailRecordId) openEditModal(detailRecordId);
+}
+
+function copyDetailTitle() {
+  if (!detailRecordId) return;
+  copyRecordTitle(detailRecordId);
+}
+
+function renderDetail(r) {
+  const body = document.getElementById('detail-body');
+  const rating = r.rating ? ratingToNum(r.rating) : 0;
+  const tracklist = Array.isArray(r.tracklist) ? r.tracklist : [];
+  const lineup    = Array.isArray(r.lineup)    ? r.lineup    : [];
+  const metaParts = [r.form, r.year, r.cond, r.label, r.ctr].filter(Boolean);
+  const embedUrl  = r.bandcamp_id ? getBcEmbedUrl(r.bandcamp_id) : null;
+
+  let html = '';
+
+  // ── Cover art ──────────────────────────────────────────────────────────────
+  if (r.cover_url) {
+    html += `<img class="detail-cover" src="${r.cover_url}" alt="${esc(r.artist)}" onerror="this.outerHTML='<div class=\"detail-cover-placeholder\">♪</div>'">`;
+  } else {
+    html += `<div class="detail-cover-placeholder">♪</div>`;
+  }
+
+  // ── Main info ──────────────────────────────────────────────────────────────
+  html += `<div class="detail-main">
+    <div class="detail-artist">${esc(r.artist||'—')}</div>
+    <div class="detail-title">${esc(r.title||'—')}</div>
+    ${rating ? `<div class="detail-rating">${'★'.repeat(rating)}${'☆'.repeat(5-rating)}</div>` : ''}
+    <div class="detail-meta">
+      ${metaParts.map(p => `<span class="detail-meta-tag">${esc(p)}</span>`).join('')}
+    </div>
+    ${r.genre ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px">${esc(r.genre)}</div>` : ''}
+  </div>`;
+
+  // ── Fetch buttons ──────────────────────────────────────────────────────────
+  html += `<div class="detail-actions">
+    ${r.metal_url ? `<button class="detail-fetch-btn" onclick="fetchMetalArchives('${r.id}')" id="fetch-ma-${r.id}">⬇ Metal Archives</button>` : ''}
+    <button class="detail-fetch-btn" onclick="fetchMusicBrainz('${r.id}')" id="fetch-mb-${r.id}">⬇ MusicBrainz</button>
+  </div>`;
+
+  // ── Bandcamp player ────────────────────────────────────────────────────────
+  if (embedUrl) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">▶ Bandcamp</div>
+      <div class="detail-bc-wrap">
+        <iframe src="${embedUrl}" style="width:100%;height:350px;border:none" allow="autoplay" seamless></iframe>
+      </div>
+    </div>`;
+  }
+
+  // ── Tracklist ──────────────────────────────────────────────────────────────
+  if (tracklist.length) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">Tracklist</div>
+      ${tracklist.map((t,i) => `
+        <div class="detail-track">
+          <span class="detail-track-num">${i+1}</span>
+          <span class="detail-track-title">${esc(t.title||'—')}</span>
+          ${t.duration ? `<span class="detail-track-dur">${esc(t.duration)}</span>` : ''}
+          ${t.fav ? `<span class="detail-track-fav">❤</span>` : ''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  // ── Lineup ────────────────────────────────────────────────────────────────
+  if (lineup.length) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">Lineup</div>
+      ${lineup.map(m => `
+        <div class="detail-member">
+          <span class="detail-member-name">${esc(m.name||'—')}</span>
+          <span class="detail-member-role">${esc(m.role||'')}</span>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  // ── Recording notes ───────────────────────────────────────────────────────
+  if (r.rec_notes) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">Recording Notes</div>
+      <div class="detail-text">${esc(r.rec_notes)}</div>
+    </div>`;
+  }
+
+  // ── Review ────────────────────────────────────────────────────────────────
+  if (r.review) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">Review</div>
+      <div class="detail-text">${esc(r.review)}</div>
+    </div>`;
+  }
+
+  // ── Links ─────────────────────────────────────────────────────────────────
+  const links = [];
+  if (r.discogs_url) links.push(`<a class="detail-link" href="${r.discogs_url}" target="_blank">↗ Discogs</a>`);
+  if (r.metal_url)   links.push(`<a class="detail-link" href="${r.metal_url}"   target="_blank">↗ Metal Archives</a>`);
+  if (links.length) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">Links</div>
+      <div class="detail-links">${links.join('')}</div>
+    </div>`;
+  }
+
+  body.innerHTML = html;
+}
+
+// ── METAL ARCHIVES FETCH ──────────────────────────────────────────────────────
+async function fetchMetalArchives(id) {
+  const r = allRecords.find(x => String(x.id) === String(id));
+  if (!r?.metal_url) return;
+  const btn = document.getElementById('fetch-ma-' + id);
+  if (btn) { btn.textContent = '⏳ Fetching…'; btn.classList.add('loading'); btn.disabled = true; }
+
+  try {
+    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(r.metal_url));
+    if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+    const html = await res.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Extract tracklist
+    const tracks = [];
+    doc.querySelectorAll('#songListingTable tbody tr.odd, #songListingTable tbody tr.even').forEach((row, i) => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 3) {
+        const title    = cells[1]?.textContent?.trim() || '';
+        const duration = cells[2]?.textContent?.trim() || '';
+        if (title) tracks.push({ title, duration, fav: false });
+      }
+    });
+
+    // Extract lineup
+    const members = [];
+    doc.querySelectorAll('#band_tab_members_current .lineupTable tr, #band_tab_members_complete .lineupTable tr').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 2) {
+        const name = cells[0]?.textContent?.trim() || '';
+        const role = cells[1]?.textContent?.trim() || '';
+        if (name && role) members.push({ name, role });
+      }
+    });
+
+    // Extract cover art
+    let coverUrl = r.cover_url || null;
+    const coverImg = doc.querySelector('#cover img, .album-img img');
+    if (coverImg?.src && !r.cover_url) {
+      coverUrl = coverImg.src;
+    }
+
+    // Save to DB and memory
+    const payload = {};
+    if (tracks.length)  { payload.tracklist = tracks; r.tracklist = tracks; }
+    if (members.length) { payload.lineup    = members; r.lineup    = members; }
+    if (coverUrl && !r.cover_url) { payload.cover_url = coverUrl; r.cover_url = coverUrl; }
+
+    if (Object.keys(payload).length) {
+      await apiPatch(id, payload);
+      showToast('✓ Fetched: ' + (tracks.length ? tracks.length + ' tracks' : '') + (members.length ? ', ' + members.length + ' members' : ''), 'success');
+      renderDetail(r);
+    } else {
+      showToast('Nothing new found on Metal Archives', 'warn');
+    }
+  } catch(e) {
+    showToast('Metal Archives fetch failed: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    if (btn) { btn.textContent = '⬇ Metal Archives'; btn.classList.remove('loading'); btn.disabled = false; }
+  }
+}
+
+// ── MUSICBRAINZ FETCH ─────────────────────────────────────────────────────────
+async function fetchMusicBrainz(id) {
+  const r = allRecords.find(x => String(x.id) === String(id));
+  if (!r) return;
+  const btn = document.getElementById('fetch-mb-' + id);
+  if (btn) { btn.textContent = '⏳ Searching…'; btn.classList.add('loading'); btn.disabled = true; }
+
+  try {
+    // Search MusicBrainz by artist + title
+    const query = encodeURIComponent(`release:"${r.title}" AND artist:"${r.artist}"`);
+    const searchUrl = `https://musicbrainz.org/ws/2/release/?query=${query}&fmt=json&limit=1`;
+    const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'PulseRecordsApp/1.0 (soundpressurestudios@gmail.com)' } });
+    if (!searchRes.ok) throw new Error('MusicBrainz search failed');
+    const searchData = await searchRes.json();
+
+    if (!searchData.releases?.length) { showToast('Not found on MusicBrainz', 'warn'); return; }
+
+    const release = searchData.releases[0];
+    const mbid = release.id;
+
+    // Fetch full release details
+    const detailUrl = `https://musicbrainz.org/ws/2/release/${mbid}?inc=recordings+artist-credits&fmt=json`;
+    const detailRes = await fetch(detailUrl, { headers: { 'User-Agent': 'PulseRecordsApp/1.0 (soundpressurestudios@gmail.com)' } });
+    if (!detailRes.ok) throw new Error('MusicBrainz detail fetch failed');
+    const detail = await detailRes.json();
+
+    // Build tracklist
+    const tracks = [];
+    detail.media?.forEach(medium => {
+      medium.tracks?.forEach(t => {
+        const mins = Math.floor((t.length||0) / 60000);
+        const secs = Math.floor(((t.length||0) % 60000) / 1000).toString().padStart(2,'0');
+        const dur = t.length ? `${mins}:${secs}` : '';
+        tracks.push({ title: t.title || t.recording?.title || '', duration: dur, fav: false });
+      });
+    });
+
+    // Cover art from Cover Art Archive
+    let coverUrl = r.cover_url || null;
+    if (!r.cover_url) {
+      try {
+        const caRes = await fetch(`https://coverartarchive.org/release/${mbid}/front-250`);
+        if (caRes.ok) coverUrl = caRes.url;
+      } catch(e) { /* no cover art */ }
+    }
+
+    // Save
+    const payload = {};
+    if (tracks.length)  { payload.tracklist = tracks; r.tracklist = tracks; }
+    if (coverUrl && !r.cover_url) { payload.cover_url = coverUrl; r.cover_url = coverUrl; }
+
+    if (Object.keys(payload).length) {
+      await apiPatch(id, payload);
+      showToast('✓ MusicBrainz: ' + (tracks.length ? tracks.length + ' tracks' : '') + (coverUrl && !r.cover_url ? ', cover art' : ''), 'success');
+      renderDetail(r);
+    } else {
+      showToast('Nothing new found on MusicBrainz', 'warn');
+    }
+  } catch(e) {
+    showToast('MusicBrainz fetch failed: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    if (btn) { btn.textContent = '⬇ MusicBrainz'; btn.classList.remove('loading'); btn.disabled = false; }
+  }
 }
 
 // ── TRACKLIST ─────────────────────────────────────────────────────────────────
@@ -2404,7 +2774,7 @@ document.getElementById('search').addEventListener('search', () => { applyFilter
   document.getElementById(id).addEventListener('change',applyFilters));
 document.getElementById('per-page').addEventListener('change',()=>{perPage=parseInt(document.getElementById('per-page').value);applyFilters();});
 // Click outside modal does NOT close (prevents accidental data loss)
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){ if(document.activeElement && document.activeElement.id==='btn-confirm-delete') return; closeModal();closeConfirm();closeDupPanel();closeActMenus();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){ if(document.activeElement && document.activeElement.id==='btn-confirm-delete') return; closeModal();closeConfirm();closeDupPanel();closeActMenus();closeDetail();}});
 document.addEventListener('click', () => { closeActMenus(); closeAllAc(); });
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
