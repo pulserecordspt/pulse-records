@@ -1403,11 +1403,11 @@ function copyDetailTitle() {
 
 function renderDetail(r) {
   const body = document.getElementById('detail-body');
+  // Always use freshest data from allRecords
+  const liveR = allRecords.find(x => String(x.id) === String(r.id));
+  if (liveR) r = liveR;
   const rating = r.rating ? ratingToNum(r.rating) : 0;
   const tracklist = Array.isArray(r.tracklist) ? r.tracklist : [];
-  // Sync with allRecords to get latest fav state
-  const liveR = allRecords.find(x => String(x.id) === String(r.id));
-  if (liveR) { r.tracklist = liveR.tracklist; }
   const lineup    = Array.isArray(r.lineup)    ? r.lineup    : [];
   const metaParts = [r.form, r.year, r.cond, r.label, r.ctr].filter(Boolean);
   const embedUrl  = r.bandcamp_id ? getBcEmbedUrl(r.bandcamp_id) : null;
