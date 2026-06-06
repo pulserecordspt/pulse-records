@@ -1484,7 +1484,7 @@ async function fetchMetalArchives(id) {
 
     // Use Metal Archives Ajax API for tracklist
     const trackUrl = `https://www.metal-archives.com/release/ajax-view-tracklist/id/${albumId}`;
-    const trackRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(trackUrl));
+    const trackRes = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(trackUrl));
     if (!trackRes.ok) throw new Error('Tracklist fetch failed: ' + trackRes.status);
     const trackHtml = await trackRes.text();
 
@@ -1502,7 +1502,7 @@ async function fetchMetalArchives(id) {
 
     // Use Metal Archives Ajax API for lineup
     const lineupUrl = `https://www.metal-archives.com/release/ajax-view-lineup/id/${albumId}`;
-    const lineupRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(lineupUrl));
+    const lineupRes = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(lineupUrl));
     const members = [];
     if (lineupRes.ok) {
       const lineupHtml = await lineupRes.text();
@@ -1521,7 +1521,7 @@ async function fetchMetalArchives(id) {
     let coverUrl = null;
     if (!r.cover_url) {
       try {
-        const coverRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(`https://www.metal-archives.com/images/albums/${albumId}.jpg`));
+        const coverRes = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://www.metal-archives.com/images/albums/${albumId}.jpg`));
         if (coverRes.ok) coverUrl = `https://www.metal-archives.com/images/albums/${albumId}.jpg`;
       } catch(e) { /* no cover */ }
     }
@@ -1588,7 +1588,7 @@ async function fetchMusicBrainz(id) {
     let coverUrl = r.cover_url || null;
     if (!r.cover_url) {
       try {
-        const caRes = await fetch(`https://coverartarchive.org/release/${mbid}/front-250`);
+        const caRes = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://coverartarchive.org/release/${mbid}/front-250`));
         if (caRes.ok) coverUrl = caRes.url;
       } catch(e) { /* no cover art */ }
     }
