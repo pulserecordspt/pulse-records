@@ -1483,7 +1483,7 @@ async function fetchMetalArchives(id) {
     const albumId = albumIdMatch[1];
 
     // Use Metal Archives Ajax API for tracklist
-    const trackUrl = `https://www.metal-archives.com/release/ajax-tracks/id/${albumId}`;
+    const trackUrl = `https://www.metal-archives.com/release/ajax-view-tracklist/id/${albumId}`;
     const trackRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(trackUrl));
     if (!trackRes.ok) throw new Error('Tracklist fetch failed: ' + trackRes.status);
     const trackHtml = await trackRes.text();
@@ -1501,7 +1501,7 @@ async function fetchMetalArchives(id) {
     });
 
     // Use Metal Archives Ajax API for lineup
-    const lineupUrl = `https://www.metal-archives.com/release/ajax-personnel/id/${albumId}`;
+    const lineupUrl = `https://www.metal-archives.com/release/ajax-view-lineup/id/${albumId}`;
     const lineupRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(lineupUrl));
     const members = [];
     if (lineupRes.ok) {
