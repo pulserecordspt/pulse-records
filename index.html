@@ -472,13 +472,13 @@ select option { background:var(--surface); }
 }
 .complete-badge {
   display:inline-flex; align-items:center; gap:3px;
-  background:#3dab6a; color:#fff; font-size:0.62rem;
-  font-family:var(--font-mono); padding:2px 6px; border-radius:2px;
-  letter-spacing:0.06em; font-weight:700;
+  background:#3dab6a; color:#fff; font-size:0.65rem;
+  font-family:var(--font-mono); padding:2px 7px; border-radius:10px;
+  letter-spacing:0.06em; font-weight:700; white-space:nowrap;
 }
 .record-row.is-complete .complete-badge { display:inline-flex; }
-.record-row.is-complete { background: rgba(61,171,106,0.06); border-left: 3px solid #3dab6a !important; }
-.record-row.is-complete:hover { background: rgba(61,171,106,0.1); }
+.record-row.is-complete { background: rgba(61,171,106,0.07); box-shadow: inset 0 0 0 1px rgba(61,171,106,0.4); }
+.record-row.is-complete:hover { background: rgba(61,171,106,0.12); }
 
 /* EXPANDABLE DESCRIPTION */
 .record-row { cursor:pointer; }
@@ -1268,7 +1268,6 @@ function makeGridCard(r) {
     <div class="grid-body">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">
         <div class="grid-artist" style="flex:1">${esc(r.artist||'—')}</div>
-        ${complete ? '<span class="complete-badge">✓ COMPLETE</span>' : ''}
         <button onclick="copyRecordTitle('${r.id}');event.stopPropagation()" title="Copy title" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:0 2px;flex-shrink:0">⎘</button>
       </div>
       <div class="grid-title">${esc(r.title||'—')}</div>
@@ -1414,7 +1413,7 @@ function renderDetail(r) {
 
   // ── Cover art ──────────────────────────────────────────────────────────────
   if (r.cover_url) {
-    html += `<img class="detail-cover" src="${r.cover_url}" alt="${esc(r.artist)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\"detail-cover-placeholder\">♪</div>')">`;
+    html += `<img class="detail-cover" src="${r.cover_url}" alt="${esc(r.artist)}" onerror="this.outerHTML='<div class=detail-cover-placeholder style=width:100%;aspect-ratio:1;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:4rem;color:var(--border)>&#9834;</div>'">`;
   } else {
     html += `<div class="detail-cover-placeholder">♪</div>`;
   }
