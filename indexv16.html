@@ -31,7 +31,7 @@ body { background: var(--black); color: var(--text); font-family: var(--font-bod
 .stat-chip b { color:var(--accent); font-weight:500; }
 .stat-chip.sold-chip b { color:var(--red); }
 
-/* TOOLBAR */
+/* TOOLBAR */  
 #toolbar { background:var(--deep); border-bottom:1px solid var(--border); padding:6px 16px; display:flex; gap:5px; align-items:center; flex-wrap:nowrap; position:sticky; top:54px; z-index:99; overflow-x:auto; }
 .search-wrap { position:relative; flex:1; min-width:180px; max-width:360px; }
 .search-wrap svg { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-muted); }
@@ -629,6 +629,7 @@ select option { background:var(--surface); }
 
 <div id="bulk-bar">
   <span id="bulk-count">0 selected</span>
+  <button class="btn" onclick="bulkFetchDiscogs()">⬇ DISCOGS (MAX 100)</button>
   <button class="btn" onclick="copySelected()">⎘ COPY</button>
   <button class="btn" onclick="bulkFlag('newsletter',true)" style="color:#4a9edd;border-color:#4a9edd">📩 ADD TO NEWSLETTER</button>
   <button class="btn" onclick="exportNewsletter()">📋 EXPORT NEWSLETTER</button>
@@ -1116,6 +1117,34 @@ function applyFilters() {
   renderPage();
   updateStats();
 }
+
+  // Paste the new function here:
+async function bulkFetchDiscogs() {
+  const ids = [...selectedIds].slice(0, 100);
+  if (!ids.length) return;
+  
+  if (!confirm(`Fetch Discogs data for ${ids.length} records? This will take ~${Math.ceil(ids.length * 1.2)} seconds to avoid rate limits.`)) return;
+  
+  showToast(`Starting bulk fetch for ${ids.length} records...`);
+  
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    const btn = document.getElementById('fetch-' + id);
+    
+    await fetchDiscogs(id, btn);
+    
+    if (i < ids.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+  }
+  
+  showToast(`Finished fetching ${ids.length} records.`, 'success');
+}
+
+// ── BULK FLAG ─────────────────────────────────────────────────────────────────
+async function bulkFlag(field, val) {
+  const ids = [...selectedIds].map(id => parseInt(id)).filter(id => !isNaN(id));
+  // ... rest of the existing code
 
 function sortBy(field) {
   if (sortField===field) sortDir=sortDir==='asc'?'desc':'asc';
