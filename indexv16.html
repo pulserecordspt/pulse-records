@@ -736,6 +736,24 @@ select option { background:var(--surface); }
           </div>
         </div>
 
+        <div class="form-group" style="max-width:100px">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="f-quantity" type="number" min="1" placeholder="1" style="text-align:center;" title="Number of copies">
+        </div>
+
+        <div class="form-group" style="max-width:180px">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="f-status">
+            <option value="">— none —</option>
+            <option>In Collection</option>
+            <option>For Sale</option>
+            <option>Reserved</option>
+            <option>Loaned Out</option>
+            <option>Sold</option>
+            <option>Consignment</option>
+          </select>
+        </div>
+
         <div class="form-group" style="max-width:140px">
           <label class="form-label">Times Listened</label>
           <input class="form-input" id="f-listen" type="number" min="0" placeholder="0" style="text-align:center;">
@@ -966,7 +984,8 @@ const COL = {
   'DISCOGS €':'discogs_price', 'EMAIL €':'email_price', '☆☆☆☆☆':'rating',
   'LABEL':'label', 'COST':'cost', 'DISCOGS URL':'discogs_url',
   'ENCYCLOPAEDIA METALLUM URL':'metal_url', 'VINTED':'vinted',
-  'SOCIAL':'social', 'sold':'sold', 'listen_count':'listen_count', 'edited':'edited', 'newsletter':'newsletter', 'cover_url':'cover_url', 'bandcamp_url':'bandcamp_url', 'bandcamp_id':'bandcamp_id', 'vinted_queue':'vinted_queue', 'tracklist':'tracklist', 'lineup':'lineup', 'rec_notes':'rec_notes', 'review':'review', 'updated_at':'updated_at', 'created_at':'created_at'
+  'SOCIAL':'social', 'sold':'sold', 'listen_count':'listen_count', 'edited':'edited', 'newsletter':'newsletter', 'cover_url':'cover_url', 'bandcamp_url':'bandcamp_url', 'bandcamp_id':'bandcamp_id', 'vinted_queue':'vinted_queue', 'tracklist':'tracklist', 'lineup':'lineup', 'rec_notes':'rec_notes', 'review':'review', 'updated_at':'updated_at', 'created_at':'created_at',
+  'quantity':'quantity', 'status':'status'
 };
 const COL_REV = Object.fromEntries(Object.entries(COL).map(([k,v])=>[v,k]));
 
@@ -978,6 +997,7 @@ function norm(row) {
   out.listen_count = parseInt(out.listen_count) || 0;
   out.edited     = out.edited     === true || out.edited     === 'true';
   out.newsletter = out.newsletter === true || out.newsletter === 'true';
+  out.quantity = parseInt(out.quantity) || 1;
   out.vinted = out.vinted === true || out.vinted === 'true' || (typeof out.vinted === 'string' && out.vinted.trim() !== '' && out.vinted.trim().toLowerCase() !== 'false');
   out.social = out.social === true || out.social === 'true' || (typeof out.social === 'string' && out.social.trim() !== '' && out.social.trim().toLowerCase() !== 'false');
   return out;
@@ -1281,7 +1301,7 @@ function makeGridCard(r) {
       <div class="vinyl-disc" style="${r.cover_url?'display:none':''}">
         <div class="${isLP?'vinyl-label':'vinyl-label-cd'}">${(r.label||r.artist||'?').substring(0,12).replace(/[<>"'&]/g,'')}</div>
       </div>
-      <div class="form-tag-grid">${esc(r.form||'?')}</div>
+      <div class="form-tag-grid">${esc(r.form||'?')}${r.quantity>1?` ×${r.quantity}`:''}</div>
       ${isSold?'<div class="sold-overlay"><span>SOLD</span></div>':''}
       ${r.edited?'<div style="position:absolute;top:7px;left:7px;background:#6aaa3a;color:#fff;font-size:0.65rem;font-family:var(--font-mono);font-weight:700;padding:2px 7px;border-radius:2px;letter-spacing:0.05em;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,0.6)">✓ DONE</div>':''}
       ${r.bandcamp_id ? `
@@ -1497,6 +1517,14 @@ function renderDetail(r) {
           <span class="detail-member-role">${esc(m.role||'')}</span>
         </div>`).join('')}
     </div>`;
+  }
+
+  // ── Quantity + Status ────────────────────────────────────────────────────
+  if (r.quantity > 1 || r.status) {
+    html += `<div class="detail-section"><div class="detail-meta" style="display:flex;gap:18px;flex-wrap:wrap">`;
+    if (r.quantity > 1) html += `<span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--accent)">✕${r.quantity} copies</span>`;
+    if (r.status) html += `<span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-dim);background:var(--raised);border:1px solid var(--border);padding:2px 8px;border-radius:2px">${esc(r.status)}</span>`;
+    html += `</div></div>`;
   }
 
   // ── Recording notes ───────────────────────────────────────────────────────
@@ -2473,7 +2501,9 @@ async function saveRecord() {
     newsletter:   document.getElementById('f-newsletter').checked,
     vinted:        document.getElementById('f-vinted').checked,
     vinted_queue:  document.getElementById('f-vinted-queue').checked,
-    social:       document.getElementById('f-social').checked,
+    social:        document.getElementById('f-social').checked,
+    quantity:      parseInt(document.getElementById('f-quantity').value) || 1,
+    status:        document.getElementById('f-status').value.trim() || null,
   };
   if (!payload.artist) { showToast('Artist is required','error'); return; }
   try {
@@ -2988,8 +3018,7 @@ async function startBulkFetch() {
   let done = 0, skipped = 0, errors = 0;
 
   function log(msg) {
-    logEl.textContent = logEl.textContent ? logEl.textContent + '
-' + msg : msg;
+    logEl.textContent = logEl.textContent ? logEl.textContent + '\n' + msg : msg;
     logEl.scrollTop = logEl.scrollHeight;
   }
 
