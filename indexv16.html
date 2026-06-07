@@ -2236,34 +2236,6 @@ async function toggleFlag(id, field, val) {
   } catch(e) { showToast('Error: '+e.message,'error'); }
 }
 
-  // Paste the new function here:
-async function bulkFetchDiscogs() {
-  const ids = [...selectedIds].slice(0, 100);
-  if (!ids.length) return;
-  
-  if (!confirm(`Fetch Discogs data for ${ids.length} records? This will take ~${Math.ceil(ids.length * 1.2)} seconds to avoid rate limits.`)) return;
-  
-  showToast(`Starting bulk fetch for ${ids.length} records...`);
-  
-  for (let i = 0; i < ids.length; i++) {
-    const id = ids[i];
-    const btn = document.getElementById('fetch-' + id);
-    
-    await fetchDiscogs(id, btn);
-    
-    if (i < ids.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 1200));
-    }
-  }
-  
-  showToast(`Finished fetching ${ids.length} records.`, 'success');
-}
-
-// ── BULK FLAG ─────────────────────────────────────────────────────────────────
-async function bulkFlag(field, val) {
-  const ids = [...selectedIds].map(id => parseInt(id)).filter(id => !isNaN(id));
-  // ... rest of the existing code
-
 // ── BULK FLAG ─────────────────────────────────────────────────────────────────
 async function bulkFlag(field, val) {
   const ids = [...selectedIds].map(id => parseInt(id)).filter(id => !isNaN(id));
